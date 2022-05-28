@@ -6,7 +6,8 @@ import json
 
 import rospy
 from std_msgs.msg import Header
-from mavros_msgs.msg import RTCM
+#from mavros_msgs.msg import RTCM
+from rtcm_msgs.msg import Message
 from nmea_msgs.msg import Sentence
 
 from ntrip_client.ntrip_client import NTRIPClient
@@ -54,7 +55,7 @@ class NTRIPRos:
 
     # Setup the RTCM publisher
     self._rtcm_timer = None
-    self._rtcm_pub = rospy.Publisher('rtcm', RTCM, queue_size=10)
+    self._rtcm_pub = rospy.Publisher('rtcm', Message, queue_size=10)
 
     # Initialize the client
     self._client = NTRIPClient(
@@ -67,8 +68,11 @@ class NTRIPRos:
       logerr=rospy.logerr,
       logwarn=rospy.logwarn,
       loginfo=rospy.loginfo,
-      logdebug=rospy.logdebug
+      logdebug=self.nofunc #rospy.logdebug
     )
+
+  def nofunc(x=None,y=None):
+    pass
 
   def run(self):
     # Setup a shutdown hook
@@ -99,16 +103,21 @@ class NTRIPRos:
 
   def subscribe_nmea(self, nmea):
     # Just extract the NMEA from the message, and send it right to the server
+    if len(nmea.sentence) < 6:
+        return
+    if nmea.sentence[3:6] != 'GGA':
+        #rospy.logwarn('skipping nmea : ' + nmea.sentence[3:6])
+        return
     self._client.send_nmea(nmea.sentence)
 
   def publish_rtcm(self, event):
     for raw_rtcm in self._client.recv_rtcm():
-      self._rtcm_pub.publish(RTCM(
+      self._rtcm_pub.publish(Message(
         header=Header(
           stamp=rospy.Time.now(),
           frame_id=self._rtcm_frame_id
         ),
-        data=raw_rtcm
+        message=raw_rtcm
       ))
 
 

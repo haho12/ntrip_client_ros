@@ -49,7 +49,7 @@ class NTRIPClient:
       logerr=logerr,
       logwarn=logwarn,
       loginfo=loginfo,
-      logdebug=logdebug
+      logdebug=self.nofunc #logdebug
     )
     self._nmea_parser = NMEAParser(
       logerr=logerr,
@@ -60,6 +60,9 @@ class NTRIPClient:
 
     # Setup some state
     self._connected = False
+
+  def nofunc(x=None,y=None):
+    pass
 
   def connect(self):
     # Connect the socket to the server
@@ -143,6 +146,8 @@ class NTRIPClient:
 
     # Encode the data and send it to the socket
     try:
+      #self._logerr('tx nmea: ' + str(sentence))
+
       self._server_socket.send(sentence.encode('utf-8'))
     except Exception as e:
       self._logwarn('Unable to send NMEA sentence to server.')
